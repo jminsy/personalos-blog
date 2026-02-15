@@ -1,4 +1,6 @@
 ---
+published: true
+hashnode_url: https://personalos.hashnode.dev/stop-building-what-your-ai-can-already-do
 title: Stop Building What Your AI Can Already Do
 subtitle: How I deleted half a feature and got a better product
 tags: [ai, developer-tools, productivity, build-in-public]

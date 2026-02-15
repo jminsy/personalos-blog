@@ -1,4 +1,6 @@
 ---
+published: true
+hashnode_url: https://personalos.hashnode.dev/what-if-your-life-had-an-operating-system
 title: What If Your Life Had an Operating System?
 subtitle: I stopped organizing my life and started engineering it
 tags: [ai, productivity, personal-development, build-in-public]
