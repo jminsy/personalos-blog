@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths: ['posts/**']
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
