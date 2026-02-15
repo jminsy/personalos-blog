@@ -21,7 +21,8 @@
 ## Structure
 - Hook in first 2 sentences — start with a story, surprise, or bold claim
 - Short paragraphs (2-4 sentences max)
-- Code snippets when relevant — devs love seeing the actual implementation
+- Keep posts concise — say more with less, no fluff or padding
+- No code snippets — focus on ideas, insights, and principles, not implementation
 - End with a takeaway or principle — something quotable
 - Series footer linking to personalos.hashnode.dev
 
@@ -34,6 +35,7 @@
 ## What makes a good post
 - A real moment from building the OS (not hypothetical)
 - A before/after — what changed and why
+- An insight that makes the reader rethink how they work
 - A principle that generalizes beyond our specific system
 - Something the reader can think about or try themselves
 
