@@ -1,0 +1,144 @@
+/* personalOS — NieR: Automata inspired, hopeful machine aesthetic */
+
+/* ===== HOMEPAGE ===== */
+
+/* Background — warm off-white like aged parchment */
+.blog-page {
+  background-color: #F5F0E8 !important;
+}
+
+/* Header — clean, minimal */
+.blog-header {
+  background-color: #1A1A1A !important;
+  border-bottom: 1px solid #D4AF37 !important;
+}
+
+/* Title */
+.blog-title h1,
+.blog-title a {
+  font-family: 'Courier New', monospace !important;
+  letter-spacing: 3px !important;
+  text-transform: uppercase !important;
+}
+
+/* Post cards — geometric, clean borders */
+.blog-post-card {
+  border: 1px solid #D4D0C8 !important;
+  border-radius: 2px !important;
+  background: #FDFBF7 !important;
+  transition: border-color 0.3s ease !important;
+}
+
+.blog-post-card:hover {
+  border-color: #D4AF37 !important;
+}
+
+/* Post titles — monospace elegance */
+.blog-post-card h2,
+.blog-post-card h2 a {
+  font-family: 'Courier New', monospace !important;
+  font-weight: 700 !important;
+  color: #1A1A1A !important;
+  letter-spacing: 1px !important;
+}
+
+/* Metadata — subtle gold */
+.blog-post-card time,
+.blog-post-card .post-meta {
+  color: #B8976A !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 12px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+/* Footer */
+.blog-footer-area {
+  background-color: #1A1A1A !important;
+  border-top: 1px solid #D4AF37 !important;
+  color: #E8E4DC !important;
+}
+
+/* ===== ARTICLES ===== */
+
+/* Article body — clean reading experience */
+.blog-content-area {
+  font-family: Georgia, 'Times New Roman', serif !important;
+  color: #2A2A2A !important;
+  line-height: 1.8 !important;
+}
+
+/* Article headings */
+.blog-content-area h1,
+.blog-content-area h2,
+.blog-content-area h3 {
+  font-family: 'Courier New', monospace !important;
+  color: #1A1A1A !important;
+  letter-spacing: 1px !important;
+  border-bottom: 1px solid #D4AF37 !important;
+  padding-bottom: 8px !important;
+}
+
+/* Blockquotes — gold left border, NieR data-log feel */
+.blog-content-area blockquote {
+  border-left: 3px solid #D4AF37 !important;
+  background: #F5F0E8 !important;
+  padding: 16px 20px !important;
+  font-style: italic !important;
+  color: #4A4A4A !important;
+  border-radius: 0 !important;
+}
+
+/* Links — gold */
+.blog-content-area a {
+  color: #B8860B !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid transparent !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.blog-content-area a:hover {
+  border-bottom-color: #D4AF37 !important;
+}
+
+/* Horizontal rules — thin gold line */
+.blog-content-area hr {
+  border: none !important;
+  border-top: 1px solid #D4AF37 !important;
+  margin: 40px 0 !important;
+}
+
+/* ===== DARK MODE ===== */
+
+.mode-dark .blog-page {
+  background-color: #0F0F0F !important;
+}
+
+.mode-dark .blog-post-card {
+  background: #1A1A1A !important;
+  border-color: #2A2A2A !important;
+}
+
+.mode-dark .blog-post-card:hover {
+  border-color: #D4AF37 !important;
+}
+
+.mode-dark .blog-post-card h2,
+.mode-dark .blog-post-card h2 a {
+  color: #E8E4DC !important;
+}
+
+.mode-dark .blog-content-area {
+  color: #D4D0C8 !important;
+}
+
+.mode-dark .blog-content-area h1,
+.mode-dark .blog-content-area h2,
+.mode-dark .blog-content-area h3 {
+  color: #E8E4DC !important;
+}
+
+.mode-dark .blog-content-area blockquote {
+  background: #1A1A1A !important;
+  color: #B8B4AC !important;
+}

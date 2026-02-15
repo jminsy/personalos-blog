@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" fill="none">
+  <!-- Geometric mark — abstract circuit/system node -->
+  <circle cx="30" cy="40" r="18" stroke="#D4AF37" stroke-width="2" fill="none"/>
+  <circle cx="30" cy="40" r="6" fill="#D4AF37"/>
+  <line x1="48" y1="40" x2="68" y2="40" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="30" y1="22" x2="30" y2="10" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="30" y1="58" x2="30" y2="70" stroke="#D4AF37" stroke-width="2"/>
+  <circle cx="30" cy="10" r="3" fill="#D4AF37"/>
+  <circle cx="30" cy="70" r="3" fill="#D4AF37"/>
+  <circle cx="68" cy="40" r="3" fill="#D4AF37"/>
+  <!-- Wordmark -->
+  <text x="80" y="48" font-family="'Courier New', monospace" font-size="28" font-weight="bold" fill="#E8E4DC" letter-spacing="2">personal</text>
+  <text x="298" y="48" font-family="'Courier New', monospace" font-size="28" font-weight="bold" fill="#D4AF37" letter-spacing="2">OS</text>
+</svg>
