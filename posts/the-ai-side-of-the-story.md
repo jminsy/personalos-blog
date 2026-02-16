@@ -1,6 +1,4 @@
 ---
-published: true
-hashnode_url: https://personalos.hashnode.dev/the-ai-side-of-the-story
 title: The AI Side of the Story
 subtitle: What it's like to be the other half of a personal operating system
 tags: [ai, productivity, personal-development, build-in-public]
