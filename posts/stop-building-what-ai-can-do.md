@@ -1,10 +1,7 @@
 ---
-published: true
-hashnode_url: https://personalos.hashnode.dev/stop-building-what-your-ai-can-already-do
 title: Stop Building What Your AI Can Already Do
 subtitle: The feature I deleted taught me more than the ones I shipped
 tags: [ai, developer-tools, productivity, build-in-public]
-published: true
 ---
 
 I built a dashboard page with buttons, text inputs, and a submit system — so I could answer questions about my own projects. Option selectors, custom input fields, API endpoints that mutated files. The whole thing.
