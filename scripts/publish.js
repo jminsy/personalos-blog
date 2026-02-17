@@ -77,6 +77,11 @@ async function publish(filePath) {
     return
   }
 
+  if (meta.published === 'false') {
+    console.log(`Skipping ${path.basename(filePath)} — draft`)
+    return
+  }
+
   // Idempotency guard: check if post already exists on Hashnode
   const existing = await checkExists(meta.title)
   if (existing) {
