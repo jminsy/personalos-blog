@@ -6,6 +6,16 @@ const path = require('node:path')
 const API_URL = 'https://gql.hashnode.com/'
 const POSTS_DIR = path.resolve(__dirname, '../posts')
 
+const HASHNODE_HOST = process.env.HASHNODE_HOST || 'personalos.hashnode.dev'
+
+const CHECK_EXISTS_QUERY = `
+  query CheckPost($host: String!, $slug: String!) {
+    publication(host: $host) {
+      post(slug: $slug) { id url }
+    }
+  }
+`
+
 const PUBLISH_MUTATION = `
   mutation PublishPost($input: PublishPostInput!) {
     publishPost(input: $input) {
@@ -13,6 +23,28 @@ const PUBLISH_MUTATION = `
     }
   }
 `
+
+function slugify(title) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+async function checkExists(title) {
+  const slug = slugify(title)
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: process.env.HASHNODE_PAT,
+    },
+    body: JSON.stringify({
+      query: CHECK_EXISTS_QUERY,
+      variables: { host: HASHNODE_HOST, slug },
+    }),
+  })
+  const json = await res.json()
+  const post = json.data?.publication?.post
+  return post ? { id: post.id, url: post.url } : null
+}
 
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
@@ -23,6 +55,10 @@ function parseFrontmatter(raw) {
     if (idx === -1) continue
     const key = line.slice(0, idx).trim()
     let val = line.slice(idx + 1).trim()
+    // Strip surrounding quotes
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      val = val.slice(1, -1)
+    }
     // Handle arrays like [tag1, tag2]
     if (val.startsWith('[') && val.endsWith(']')) {
       val = val.slice(1, -1).split(',').map((s) => s.trim().replace(/"/g, ''))
@@ -38,6 +74,15 @@ async function publish(filePath) {
 
   if (meta.published === 'true') {
     console.log(`Skipping ${path.basename(filePath)} — already published`)
+    return
+  }
+
+  // Idempotency guard: check if post already exists on Hashnode
+  const existing = await checkExists(meta.title)
+  if (existing) {
+    console.log(`Skipping ${path.basename(filePath)} — already exists on Hashnode (${existing.url})`)
+    const updated = raw.replace(/^---\n/, `---\npublished: true\nhashnode_url: ${existing.url}\n`)
+    fs.writeFileSync(filePath, updated, 'utf-8')
     return
   }
 
