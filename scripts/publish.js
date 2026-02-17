@@ -134,7 +134,16 @@ async function main() {
     return
   }
 
-  for (const file of files) {
+  // Sort by date frontmatter (oldest first) for chronological publishing
+  const sorted = files
+    .map((f) => {
+      const raw = fs.readFileSync(path.join(POSTS_DIR, f), 'utf-8')
+      const { meta } = parseFrontmatter(raw)
+      return { file: f, date: meta.date || '9999-99-99' }
+    })
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  for (const { file } of sorted) {
     await publish(path.join(POSTS_DIR, file))
   }
 }
