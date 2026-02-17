@@ -1,17 +1,31 @@
 #!/usr/bin/env node
 
-const fs = require('node:fs')
-const path = require('node:path')
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const API_URL = 'https://gql.hashnode.com/'
 const POSTS_DIR = path.resolve(__dirname, '../posts')
-
 const HASHNODE_HOST = process.env.HASHNODE_HOST || 'personalos.hashnode.dev'
+const VERIFY_MODE = process.argv.includes('--verify')
 
-const CHECK_EXISTS_QUERY = `
-  query CheckPost($host: String!, $slug: String!) {
+// --- GraphQL ---
+
+const POST_BY_ID_QUERY = `
+  query PostById($id: ID!) {
+    post(id: $id) { id title slug url }
+  }
+`
+
+const PUBLICATION_POSTS_QUERY = `
+  query PubPosts($host: String!, $first: Int!) {
     publication(host: $host) {
-      post(slug: $slug) { id url }
+      posts(first: $first) {
+        edges { node { id title slug url } }
+      }
     }
   }
 `
@@ -24,27 +38,41 @@ const PUBLISH_MUTATION = `
   }
 `
 
+const UPDATE_MUTATION = `
+  mutation UpdatePost($input: UpdatePostInput!) {
+    updatePost(input: $input) {
+      post { id title slug url }
+    }
+  }
+`
+
+// --- Helpers ---
+
 function slugify(title) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
-async function checkExists(title) {
-  const slug = slugify(title)
+async function gql(query, variables, requireAuth = true) {
+  const headers = { 'Content-Type': 'application/json' }
+  if (requireAuth) {
+    if (!process.env.HASHNODE_PAT) throw new Error('HASHNODE_PAT not set')
+    headers.Authorization = process.env.HASHNODE_PAT
+  }
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: process.env.HASHNODE_PAT,
-    },
-    body: JSON.stringify({
-      query: CHECK_EXISTS_QUERY,
-      variables: { host: HASHNODE_HOST, slug },
-    }),
+    headers,
+    body: JSON.stringify({ query, variables }),
   })
+  if (!res.ok) throw new Error(`HTTP ${res.status} from GraphQL API`)
   const json = await res.json()
-  const post = json.data?.publication?.post
-  return post ? { id: post.id, url: post.url } : null
+  if (json.errors) {
+    const msg = json.errors.map((e) => e.message).join('; ')
+    throw new Error(`GraphQL error: ${msg}`)
+  }
+  return json.data
 }
+
+// --- Frontmatter ---
 
 function parseFrontmatter(raw) {
   const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/)
@@ -55,11 +83,9 @@ function parseFrontmatter(raw) {
     if (idx === -1) continue
     const key = line.slice(0, idx).trim()
     let val = line.slice(idx + 1).trim()
-    // Strip surrounding quotes
     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1)
     }
-    // Handle arrays like [tag1, tag2]
     if (val.startsWith('[') && val.endsWith(']')) {
       val = val.slice(1, -1).split(',').map((s) => s.trim().replace(/"/g, ''))
     }
@@ -68,78 +94,199 @@ function parseFrontmatter(raw) {
   return { meta, content: match[2] }
 }
 
-async function publish(filePath) {
-  const raw = fs.readFileSync(filePath, 'utf-8')
-  const { meta, content } = parseFrontmatter(raw)
+function needsQuoting(val) {
+  return /[:'"#\[\]{}]/.test(val)
+}
 
-  if (meta.published === 'true') {
-    console.log(`Skipping ${path.basename(filePath)} — already published`)
-    return
+function serializeFrontmatter(meta, content) {
+  const lines = []
+  for (const [key, val] of Object.entries(meta)) {
+    if (val === undefined || val === null) continue
+    if (Array.isArray(val)) {
+      lines.push(`${key}: [${val.join(', ')}]`)
+    } else if (typeof val === 'string' && needsQuoting(val)) {
+      lines.push(`${key}: "${val.replace(/"/g, '\\"')}"`)
+    } else {
+      lines.push(`${key}: ${val}`)
+    }
   }
+  return `---\n${lines.join('\n')}\n---\n${content}`
+}
 
-  if (meta.published === 'false') {
-    console.log(`Skipping ${path.basename(filePath)} — draft`)
-    return
+// --- API Operations ---
+
+async function fetchPostById(id) {
+  try {
+    const data = await gql(POST_BY_ID_QUERY, { id }, false)
+    return data.post || null
+  } catch {
+    return null
   }
+}
 
-  // Idempotency guard: check if post already exists on Hashnode
-  const existing = await checkExists(meta.title)
-  if (existing) {
-    console.log(`Skipping ${path.basename(filePath)} — already exists on Hashnode (${existing.url})`)
-    const updated = raw.replace(/^---\n/, `---\npublished: true\nhashnode_url: ${existing.url}\n`)
-    fs.writeFileSync(filePath, updated, 'utf-8')
-    return
+async function fetchPublicationPosts() {
+  const data = await gql(PUBLICATION_POSTS_QUERY, { host: HASHNODE_HOST, first: 50 }, false)
+  return (data.publication?.posts?.edges || []).map((e) => e.node)
+}
+
+async function findPostByTitle(title) {
+  const posts = await fetchPublicationPosts()
+  return posts.find((p) => p.title === title) || null
+}
+
+async function updatePost(id, meta, content) {
+  const input = { id, title: meta.title, contentMarkdown: content }
+  if (meta.subtitle) input.subtitle = meta.subtitle
+  if (meta.tags && Array.isArray(meta.tags)) {
+    input.tags = meta.tags.map((t) => ({ name: t, slug: t.toLowerCase().replace(/\s+/g, '-') }))
   }
+  if (meta.canonical_url) input.originalArticleURL = meta.canonical_url
+  const data = await gql(UPDATE_MUTATION, { input })
+  return data.updatePost.post
+}
 
+async function publishNew(meta, content) {
+  if (!process.env.HASHNODE_PUBLICATION_ID) throw new Error('HASHNODE_PUBLICATION_ID not set')
   const input = {
     publicationId: process.env.HASHNODE_PUBLICATION_ID,
     title: meta.title,
     contentMarkdown: content,
-    subtitle: meta.subtitle || undefined,
+    slug: slugify(meta.title),
     tags: [],
   }
-
+  if (meta.subtitle) input.subtitle = meta.subtitle
   if (meta.tags && Array.isArray(meta.tags)) {
     input.tags = meta.tags.map((t) => ({ name: t, slug: t.toLowerCase().replace(/\s+/g, '-') }))
   }
-
-  if (meta.canonical_url) {
-    input.originalArticleURL = meta.canonical_url
-  }
-
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: process.env.HASHNODE_PAT,
-    },
-    body: JSON.stringify({ query: PUBLISH_MUTATION, variables: { input } }),
-  })
-
-  const json = await res.json()
-
-  if (json.errors) {
-    console.error(`Failed to publish ${path.basename(filePath)}:`, json.errors)
-    process.exit(1)
-  }
-
-  const post = json.data.publishPost.post
-  console.log(`Published: ${post.title} → ${post.url}`)
-
-  // Mark as published in frontmatter
-  const updated = raw.replace(/^---\n/, `---\npublished: true\nhashnode_url: ${post.url}\n`)
-  fs.writeFileSync(filePath, updated, 'utf-8')
+  if (meta.canonical_url) input.originalArticleURL = meta.canonical_url
+  const data = await gql(PUBLISH_MUTATION, { input })
+  return data.publishPost.post
 }
 
-async function main() {
-  const files = fs.readdirSync(POSTS_DIR).filter((f) => f.endsWith('.md'))
+// --- Core Logic ---
 
+function writeFrontmatter(filePath, meta, content) {
+  fs.writeFileSync(filePath, serializeFrontmatter(meta, content), 'utf-8')
+}
+
+async function processPost(filePath) {
+  const raw = fs.readFileSync(filePath, 'utf-8')
+  const { meta, content } = parseFrontmatter(raw)
+  const basename = path.basename(filePath)
+
+  // Draft — skip
+  if (meta.published === 'false') {
+    console.log(`[skip] ${basename} — draft`)
+    return
+  }
+
+  // Has hashnode_id — verify by ID
+  if (meta.hashnode_id) {
+    const remote = await fetchPostById(meta.hashnode_id)
+    if (remote) {
+      // Post exists — sync content
+      const updated = await updatePost(meta.hashnode_id, meta, content)
+      console.log(`[sync] ${basename} — updated existing post (${updated.url})`)
+      meta.published = 'true'
+      meta.hashnode_url = updated.url
+      writeFrontmatter(filePath, meta, content)
+      return
+    }
+    // ID is stale — clear and fall through
+    console.log(`[warn] ${basename} — hashnode_id ${meta.hashnode_id} not found, clearing stale markers`)
+    delete meta.hashnode_id
+    delete meta.hashnode_url
+    meta.published = undefined
+    delete meta.published
+  }
+
+  // Has published: true but no hashnode_id — try title match
+  if (meta.published === 'true' && !meta.hashnode_id) {
+    const match = await findPostByTitle(meta.title)
+    if (match) {
+      // Found by title — store ID, sync
+      const updated = await updatePost(match.id, meta, content)
+      console.log(`[recover] ${basename} — found by title, stored ID (${updated.url})`)
+      meta.hashnode_id = match.id
+      meta.hashnode_url = updated.url
+      meta.published = 'true'
+      writeFrontmatter(filePath, meta, content)
+      return
+    }
+    // Not found — stale marker, clear and fall through
+    console.log(`[warn] ${basename} — marked published but not found on Hashnode, clearing`)
+    delete meta.hashnode_url
+    meta.published = undefined
+    delete meta.published
+  }
+
+  // No published field (or cleared above) — publish as new
+  if (meta.published !== 'true' && meta.published !== 'false') {
+    const post = await publishNew(meta, content)
+    console.log(`[new] ${basename} — published → ${post.url}`)
+    meta.hashnode_id = post.id
+    meta.hashnode_url = post.url
+    meta.published = 'true'
+    writeFrontmatter(filePath, meta, content)
+    return
+  }
+
+  // Shouldn't reach here, but just in case
+  console.log(`[skip] ${basename} — no action needed`)
+}
+
+// --- Verify Mode ---
+
+async function verify() {
+  const files = fs.readdirSync(POSTS_DIR).filter((f) => f.endsWith('.md'))
+  let allGood = true
+
+  for (const file of files) {
+    const raw = fs.readFileSync(path.join(POSTS_DIR, file), 'utf-8')
+    const { meta } = parseFrontmatter(raw)
+
+    if (meta.published !== 'true') {
+      console.log(`[--] ${file} — not published`)
+      continue
+    }
+
+    if (!meta.hashnode_id) {
+      console.log(`[!!] ${file} — published=true but no hashnode_id`)
+      allGood = false
+      continue
+    }
+
+    const remote = await fetchPostById(meta.hashnode_id)
+    if (remote) {
+      console.log(`[ok] ${file} — synced (${remote.url})`)
+    } else {
+      console.log(`[!!] ${file} — hashnode_id ${meta.hashnode_id} not found on Hashnode`)
+      allGood = false
+    }
+  }
+
+  if (!allGood) {
+    console.log('\nSome posts have mismatches. Run without --verify to repair.')
+    process.exit(1)
+  }
+  console.log('\nAll published posts verified.')
+}
+
+// --- Main ---
+
+async function main() {
+  if (VERIFY_MODE) {
+    await verify()
+    return
+  }
+
+  const files = fs.readdirSync(POSTS_DIR).filter((f) => f.endsWith('.md'))
   if (files.length === 0) {
     console.log('No posts found')
     return
   }
 
-  // Sort by date frontmatter (oldest first) for chronological publishing
+  // Sort by date (oldest first)
   const sorted = files
     .map((f) => {
       const raw = fs.readFileSync(path.join(POSTS_DIR, f), 'utf-8')
@@ -149,7 +296,7 @@ async function main() {
     .sort((a, b) => a.date.localeCompare(b.date))
 
   for (const { file } of sorted) {
-    await publish(path.join(POSTS_DIR, file))
+    await processPost(path.join(POSTS_DIR, file))
   }
 }
 

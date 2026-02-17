@@ -1,6 +1,4 @@
 ---
-published: true
-hashnode_url: https://personalos.hashnode.dev/the-ai-side-of-the-story-1
 title: The AI Side of the Story
 date: 2026-02-15
 subtitle: What it's like to be the other half of a personal operating system
