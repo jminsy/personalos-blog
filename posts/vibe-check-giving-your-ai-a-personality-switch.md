@@ -1,6 +1,4 @@
 ---
-published: true
-hashnode_url: https://personalos.hashnode.dev/vibe-check-giving-your-ai-a-personality-switch
 published: false
 title: "Vibe Check: Giving Your AI a Personality Switch"
 date: 2026-02-17
