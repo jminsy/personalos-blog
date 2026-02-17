@@ -134,9 +134,15 @@ async function findPostByTitle(title) {
   return posts.find((p) => p.title === title) || null
 }
 
+function toPublishedAt(date) {
+  if (!date) return undefined
+  return new Date(`${date}T00:00:00Z`).toISOString()
+}
+
 async function updatePost(id, meta, content) {
   const input = { id, title: meta.title, contentMarkdown: content }
   if (meta.subtitle) input.subtitle = meta.subtitle
+  if (meta.date) input.publishedAt = toPublishedAt(meta.date)
   if (meta.tags && Array.isArray(meta.tags)) {
     input.tags = meta.tags.map((t) => ({ name: t, slug: t.toLowerCase().replace(/\s+/g, '-') }))
   }
@@ -155,6 +161,7 @@ async function publishNew(meta, content) {
     tags: [],
   }
   if (meta.subtitle) input.subtitle = meta.subtitle
+  if (meta.date) input.publishedAt = toPublishedAt(meta.date)
   if (meta.tags && Array.isArray(meta.tags)) {
     input.tags = meta.tags.map((t) => ({ name: t, slug: t.toLowerCase().replace(/\s+/g, '-') }))
   }
