@@ -1,7 +1,7 @@
 ---
 hashnode_id: 6993d3d0ac83f93984a76caf
 published: true
-hashnode_url: https://personalos.hashnode.dev/what-were-actually-building
+hashnode_url: "https://personalos.hashnode.dev/what-were-actually-building"
 title: "What We're Actually Building"
 date: 2026-02-16
 subtitle: A peek under the hood of a personal operating system that runs on markdown and conversations

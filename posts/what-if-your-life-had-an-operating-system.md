@@ -3,6 +3,9 @@ title: What If Your Life Had an Operating System?
 date: 2026-02-14
 subtitle: I stopped organizing my life and started engineering it
 tags: [ai, productivity, personal-development, build-in-public]
+hashnode_id: 6994889bb4a52807eb45f641
+hashnode_url: "https://personalos.hashnode.dev/what-if-your-life-had-an-operating-system-1-1-1"
+published: true
 ---
 
 Your phone has an OS. Your laptop has an OS. Your car, your watch, your fridge — all running systems designed to manage complexity so you don't have to.
