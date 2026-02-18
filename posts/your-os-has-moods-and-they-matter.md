@@ -2,6 +2,9 @@
 title: Your OS Has Moods (And They Matter)
 subtitle: What happens when you teach your system to read the room before giving advice
 tags: [ai, productivity, personal-development, build-in-public]
+hashnode_id: 6996298e6293af1fbbb5c980
+hashnode_url: "https://personalos.hashnode.dev/your-os-has-moods-and-they-matter"
+published: true
 ---
 
 I asked my personal OS what to work on next. It told me to stop building and start cleaning.
